@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
+import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class CvsService {
+  constructor(private databaseService: DatabaseService) {}
+  
   create(createCvDto: CreateCvDto) {
     return 'This action adds a new cv';
   }

@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { CreateSkillDto } from './dto/create-skill.dto';
 import { UpdateSkillDto } from './dto/update-skill.dto';
+import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class SkillService {
+  constructor(private databaseService: DatabaseService) {}
+  
   create(createSkillDto: CreateSkillDto) {
     return 'This action adds a new skill';
   }
