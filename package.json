@@ -20,7 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed:cvs": "ts-node src/commands/cv.seeder.ts"
+    "seed:cvs": "npm run build && node scripts/run-cv-seeder.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
