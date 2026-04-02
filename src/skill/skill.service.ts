@@ -5,25 +5,44 @@ import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class SkillService {
-  constructor(private databaseService: DatabaseService) {}
-  
-  create(createSkillDto: CreateSkillDto) {
-    return 'This action adds a new skill';
+  constructor(private databaseService: DatabaseService) { }
+
+  async create(createSkillDto: CreateSkillDto) {
+    const skill = await this.databaseService.skill.create({
+      data: {
+        designation: createSkillDto.designation
+      }
+    });
+    return skill;
   }
 
-  findAll() {
-    return `This action returns all skill`;
+  async findAll() {
+    return await this.databaseService.skill.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} skill`;
+  async findOne(id: string) {
+    const skill = await this.databaseService.skill.findUnique({
+      where: {
+        id: id
+      }
+    });
+
+    return skill;
   }
 
-  update(id: number, updateSkillDto: UpdateSkillDto) {
-    return `This action updates a #${id} skill`;
+  async update(id: string , updateSkillDto: UpdateSkillDto) {
+    const skill =  await this.databaseService.skill.update({
+      where : { id } , 
+      data : updateSkillDto
+    });
+    return skill;    
+
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} skill`;
+  async remove(id: string ) {
+   
+    return await this.databaseService.skill.delete({
+      where : { id }
+    });
   }
 }

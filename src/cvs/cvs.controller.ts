@@ -7,9 +7,9 @@ import { UpdateCvDto } from './dto/update-cv.dto';
 export class CvsController {
   constructor(private readonly cvsService: CvsService) {}
 
-  @Post()
-  create(@Body() createCvDto: CreateCvDto) {
-    return this.cvsService.create(createCvDto);
+  @Post(':userId')
+  create(@Param('userId') userId: string, @Body() createCvDto: CreateCvDto) {
+    return this.cvsService.create(createCvDto,userId);
   }
 
   @Get()
@@ -19,16 +19,16 @@ export class CvsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.cvsService.findOne(+id);
+    return this.cvsService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCvDto: UpdateCvDto) {
-    return this.cvsService.update(+id, updateCvDto);
+    return this.cvsService.update(id, updateCvDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.cvsService.remove(+id);
+    return this.cvsService.remove(id);
   }
 }
