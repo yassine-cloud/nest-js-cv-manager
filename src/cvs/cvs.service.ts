@@ -5,25 +5,80 @@ import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class CvsService {
-  constructor(private databaseService: DatabaseService) {}
-  
-  create(createCvDto: CreateCvDto) {
-    return 'This action adds a new cv';
+  constructor(private databaseService: DatabaseService) { }
+
+  async create(createCvDto: CreateCvDto, userId: string) {
+    const skills = await Promise.all(createCvDto.skills.map(async (skill) => {
+      if (skill.id) return { id: skill.id };
+      const newskill = await this.databaseService.skill.create({
+        data: { designation: skill.designation },
+      });
+      return { id: newskill.id };
+    }));
+
+    const data: any = {
+      firstname: createCvDto.firstName,
+      age: createCvDto.age,
+      job: createCvDto.Job,
+      userId,
+      cin: '997884451',
+      skills: { connect: skills },
+      path: createCvDto.path ?? '',
+    };
+
+    const cv = await this.databaseService.cv.create({
+      data,
+      include: { skills: true, user: true },
+    });
+    return cv;
   }
 
-  findAll() {
-    return `This action returns all cvs`;
+  async findAll() {
+    const cvs = await this.databaseService.cv.findMany({
+      include: { skills: true, user: true },
+    });
+    return cvs;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} cv`;
+  async findOne(id: string) {
+    const cv = this.databaseService.cv.findUnique({
+      where: { id },
+      include: { skills: true, user: true },
+    });
+    return cv;
   }
 
-  update(id: number, updateCvDto: UpdateCvDto) {
-    return `This action updates a #${id} cv`;
+  async update(id: string, updateCvDto: UpdateCvDto) {
+    const { Job, skills, ...rest } = updateCvDto as any;
+    const data: any = { ...rest };
+
+    if (Job !== undefined) {
+      data.job = Job;
+    }
+
+    if (skills) {
+      const skillsToConnect = await Promise.all(skills.map(async (s: { id?: string; designation?: string }) => {
+        if (s.id) return { id: s.id };
+        const created = await this.databaseService.skill.create({
+          data: { designation: s.designation ?? '' },
+        });
+        return { id: created.id };
+      }));
+      data.skills = { set: [], connect: skillsToConnect };
+    }
+
+    const res = await this.databaseService.cv.update({
+      where: { id },
+      data,
+      include: { skills: true, user: true },
+    })
+    return res;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} cv`;
+  async remove(id: string) {
+    const res = await this.databaseService.cv.delete({
+      where: { id },
+    });
+    return res;
   }
 }
