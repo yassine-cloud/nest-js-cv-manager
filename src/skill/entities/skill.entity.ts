@@ -1,1 +1,7 @@
-export class Skill {}
+export class Skill {
+
+    id: string;
+    designation: string;
+
+
+}
