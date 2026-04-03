@@ -20,7 +20,12 @@ npm install
 npx prisma generate
 ```
 
-3. (Optional) Seed the database
+3. Create the database + make the migration
+```bash
+npx prisma migrate dev
+```
+
+4. (Optional) Seed the database
 
 ```bash
 npm run seed:cvs
