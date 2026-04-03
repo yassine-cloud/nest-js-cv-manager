@@ -12,6 +12,7 @@ export class CvsService {
   constructor(private databaseService: DatabaseService) {}
 
   async create(createCvDto: CreateCvDto, userId: string) {
+
     const skills = await Promise.all(
       createCvDto.skills.map(async (skill) => {
         if (skill.id) return { id: skill.id };

@@ -50,6 +50,7 @@ describe('Cv (e2e)', () => {
       name: 'Tester',
       age: 30,
       Job: 'Developer',
+      cin: '12345678',
       skills: [
         { id: skillId },
         { designation: 'e2e-new-skill' }
