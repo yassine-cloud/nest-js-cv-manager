@@ -1,0 +1,45 @@
+GET  http://localhost:3000/users HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+####
+
+
+POST http://localhost:3000/users HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+
+{
+    "username": "harrabi",
+    "email": "harrabihiba@gmail.com",
+    "password": "password123"
+   
+}
+
+####
+PATCH  http://localhost:3000/users/950a0d9d-dcf3-43c3-8557-c962ecd62f62 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+
+{
+    "username": "Hiba Harrabi",
+    "email": "user1.lakshmisitwat612@hotmail.info",
+    "password": "BLsz76z7wPqn",
+    "role": "USER"
+   
+}
+
+
+
+####
+DELETE   http://localhost:3000/users/1457f5e5-3a30-4efb-a6fa-02e1a42426bd HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+####
+GET  http://localhost:3000/users/1457f5e5-3a30-4efb-a6fa-02e1a42426bd HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
