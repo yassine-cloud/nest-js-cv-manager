@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SkillController } from './skill.controller';
 import { SkillService } from './skill.service';
+import { DatabaseService } from 'src/database/database.service';
+
+
 
 describe('SkillController', () => {
   let controller: SkillController;
