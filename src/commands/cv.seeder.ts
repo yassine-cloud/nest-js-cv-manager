@@ -72,7 +72,7 @@ export class CvSeederService {
       this.databaseService.skill.deleteMany(),
     ]);
 
-    const usersData: Prisma.UserCreateManyInput [] = Array.from(
+    const usersData: Prisma.UserCreateManyInput[] = Array.from(
       { length: USERS_COUNT },
       (_, index) => ({
         username: `${randUserName({ withAccents: false })}_${index + 1}`,

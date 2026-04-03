@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -35,24 +35,41 @@ export class AuthService {
   }
 
   async validateUser(usernameOrEmail: string, password: string) {
-    // try find by username then email
-    const users = await this.usersService.findAll();
-    const user = users.find(
-      (u: any) => u.username === usernameOrEmail || u.email === usernameOrEmail,
-    );
-    if (!user) return null;
-    const ok = this.verifyPassword(password, user.password);
-    if (!ok) return null;
-    return user;
+    try {
+      // try find by username then email
+      const users = await this.usersService.findAll();
+      const user = users.find(
+        (u: any) => u.username === usernameOrEmail || u.email === usernameOrEmail,
+      );
+      if (!user) return null;
+      const ok = this.verifyPassword(password, user.password);
+      if (!ok) return null;
+      return user;
+    } catch (err) {
+      // log and rethrow so callers can surface a helpful message
+      // console.error is intentional for quick debugging in dev
+      // (the running Nest process will show this in terminal)
+      // eslint-disable-next-line no-console
+      console.error('validateUser error', err);
+      throw new InternalServerErrorException('Failed to validate user');
+    }
   }
 
   async login(dto: LoginDto) {
-    const user = await this.validateUser(dto.usernameOrEmail, dto.password);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    const payload = { userId: user.id, username: user.username, role: user.role };
-    const token = sign(payload, process.env.JWT_SECRET ?? 'secret', {
-      expiresIn: '1h',
-    });
-    return { access_token: token };
+    try {
+      const user = await this.validateUser(dto.usernameOrEmail, dto.password);
+      if (!user) throw new UnauthorizedException('Invalid credentials');
+      const payload = { userId: user.id, username: user.username, role: user.role };
+      const token = sign(payload, process.env.JWT_SECRET ?? 'secret', {
+        expiresIn: '1h',
+      });
+      return { access_token: token };
+    } catch (err) {
+      // If it's an UnauthorizedException let it bubble up, else log and return 500
+      // eslint-disable-next-line no-console
+      console.error('login error', err);
+      if (err instanceof UnauthorizedException) throw err;
+      throw new InternalServerErrorException('Login failed');
+    }
   }
 }
