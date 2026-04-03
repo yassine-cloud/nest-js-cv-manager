@@ -36,17 +36,20 @@ export class CvsService {
     });
   }
 
-  async findAll() {
-    return this.databaseService.cv.findMany({
-      include: { skills: true, user: true },
-    });
+  async findAll(userId?: string, role?: string) {
+    if (role === 'ADMIN') {
+      return this.databaseService.cv.findMany({ include: { skills: true, user: true } });
+    }
+    // normal user: only own CVs
+    return this.databaseService.cv.findMany({ where: { userId }, include: { skills: true, user: true } });
   }
 
-  async findOne(id: string) {
-    return this.databaseService.cv.findUnique({
-      where: { id },
-      include: { skills: true, user: true },
-    });
+  async findOne(id: string, userId?: string, role?: string) {
+    const cv = await this.databaseService.cv.findUnique({ where: { id }, include: { skills: true, user: true } });
+    if (!cv) return null;
+    if (role === 'ADMIN') return cv;
+    if (cv.userId !== userId) throw new ForbiddenException('You can only view your own CVs');
+    return cv;
   }
 
   async update(id: string, updateCvDto: UpdateCvDto, userId: string) {
