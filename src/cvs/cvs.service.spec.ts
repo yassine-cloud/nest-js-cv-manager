@@ -9,7 +9,7 @@ describe('CvsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CvsService],
+      providers: [CvsService, DatabaseService],
     }).compile();
 
     service = module.get<CvsService>(CvsService);
