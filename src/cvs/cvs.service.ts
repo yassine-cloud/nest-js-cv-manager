@@ -21,7 +21,7 @@ export class CvsService {
       age: createCvDto.age,
       job: createCvDto.Job,
       userId,
-      cin: '997884451',
+      cin: createCvDto.cin,
       skills: { connect: skills },
       path: createCvDto.path ?? '',
     };

@@ -1,6 +1,7 @@
 import { Type } from "class-transformer";
 import {
     IsString,
+    Length,
     Min,
     IsOptional,
     IsUUID,
@@ -26,6 +27,10 @@ export class CreateCvDto {
     
     @IsString()
     Job: string;
+
+    @IsString()
+    @Length(8, 8)
+    cin: string;
 
     @IsString()
     @IsOptional()
