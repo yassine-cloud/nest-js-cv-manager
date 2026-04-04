@@ -1,0 +1,213 @@
+@baseUrl = http://localhost:3000
+@contentType = application/json
+@adminUsername = "admin"
+@adminEmail = "admin@email.com"
+@adminPassword = "admin123"
+
+# Run register + login first, then the token below is reused automatically.
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "username": "api-user",
+  "email": "api-user@example.com",
+  "password": "secret123"
+}
+
+
+###
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "usernameOrEmail": "api-user",
+  "password": "secret123"
+}
+
+
+###
+@token = {{login.response.body.access_token}}
+@registeredUserId = {{register.response.body.id}}
+
+
+###
+# @name adminlogin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "usernameOrEmail": {{adminUsername}},
+  "password": {{adminPassword}}
+}
+
+
+###
+@adminToken = {{adminlogin.response.body.access_token}}
+
+# root
+GET {{baseUrl}}/
+Authorization: Bearer {{token}}
+
+
+###
+# USERS API
+# @name createUser
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "username": "john_doe",
+  "email": "john.doe@example.com",
+  "password": "password123",
+  "role": "USER"
+}
+
+
+###
+@createdUserId = {{createUser.response.body.id}}
+
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+
+###
+GET {{baseUrl}}/users/{{createdUserId}}
+Authorization: Bearer {{token}}
+
+
+###
+PATCH {{baseUrl}}/users/{{createdUserId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "username": "john_doe_updated",
+  "role": "ADMIN"
+}
+
+
+###
+DELETE {{baseUrl}}/users/{{createdUserId}}
+Authorization: Bearer {{token}}
+
+
+###
+# SKILL API
+# @name createSkill
+POST {{baseUrl}}/skill
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "designation": "NestJS"
+}
+
+
+###
+@skillId = {{createSkill.response.body.id}}
+
+GET {{baseUrl}}/skill
+Authorization: Bearer {{token}}
+
+
+###
+GET {{baseUrl}}/skill/{{skillId}}
+Authorization: Bearer {{token}}
+
+
+###
+PATCH {{baseUrl}}/skill/{{skillId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "designation": "NestJS Advanced"
+}
+
+
+###
+# CVS API (JWT protected)
+# @name createCv
+POST {{baseUrl}}/cvs
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "firstName": "John",
+  "name": "Doe",
+  "age": 27,
+  "Job": "Backend Developer",
+  "cin": "12345678",
+  "path": "/tmp/john-cv.pdf",
+  "skills": [
+    {
+      "id": "{{skillId}}"
+    },
+    {
+      "designation": "Prisma"
+    }
+  ]
+}
+
+
+###
+@cvId = {{createCv.response.body.id}}
+
+GET {{baseUrl}}/cvs
+Authorization: Bearer {{adminToken}}
+
+
+###
+# For admin to retrieve all CVs
+GET {{baseUrl}}/cvs
+Authorization: Bearer {{adminToken}}
+
+
+###
+GET {{baseUrl}}/cvs/{{cvId}}
+Authorization: Bearer {{token}}
+
+
+###for admin
+GET {{baseUrl}}/cvs/{{cvId}}
+Authorization: Bearer {{adminToken}}
+
+
+###
+PATCH {{baseUrl}}/cvs/{{cvId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "Job": "Senior Backend Developer",
+  "skills": [
+    {
+      "id": "{{skillId}}"
+    }
+  ]
+}
+
+
+### for admin that cant update the cv of others
+PATCH {{baseUrl}}/cvs/{{cvId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminToken}}
+
+{
+  "Job": "Senior Backend Developer 2",
+  "skills": []
+}
+
+
+###
+DELETE {{baseUrl}}/cvs/{{cvId}}
+Authorization: Bearer {{token}}
+
+
+###
+# cleanup for skill
+DELETE {{baseUrl}}/skill/{{skillId}}
+Authorization: Bearer {{token}}
