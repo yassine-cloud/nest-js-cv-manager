@@ -41,7 +41,6 @@ export class CvsService {
     if (role === 'ADMIN') {
       return this.databaseService.cv.findMany({ include: { skills: true, user: true } });
     }
-    // normal user: only own CVs
     return this.databaseService.cv.findMany({ where: { userId }, include: { skills: true, user: true } });
   }
 
@@ -54,11 +53,9 @@ export class CvsService {
   }
 
   async update(id: string, updateCvDto: UpdateCvDto, userId: string) {
-    // 1. does this CV exist?
     const cv = await this.databaseService.cv.findUnique({ where: { id } });
     if (!cv) throw new NotFoundException('CV not found');
 
-    // 2. does this CV belong to the user making the request?
     if (cv.userId !== userId) {
       throw new ForbiddenException('You can only update your own CVs');
     }
@@ -88,11 +85,9 @@ export class CvsService {
   }
 
   async remove(id: string, userId: string) {
-    // 1. does this CV exist?
     const cv = await this.databaseService.cv.findUnique({ where: { id } });
     if (!cv) throw new NotFoundException('CV not found');
 
-    // 2. does this CV belong to the user making the request?
     if (cv.userId !== userId) {
       throw new ForbiddenException('You can only delete your own CVs');
     }
