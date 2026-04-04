@@ -21,8 +21,6 @@ import { Request } from 'express';
 export class CvsController {
   constructor(private readonly cvsService: CvsService) {}
 
-  // BEFORE: @Post(':userId') with userId from URL → insecure
-  // AFTER:  @Post() with userId from token → secure
   @Post()
   create(@Req() req: Request, @Body() createCvDto: CreateCvDto) {
     const userId = (req as any).user?.userId ?? (req as any).userId;
@@ -46,7 +44,6 @@ export class CvsController {
     return this.cvsService.findOne(id, userId, role);
   }
 
-  // update now receives userId to check ownership
   @Patch(':id')
   update(
     @Req() req: Request,
@@ -58,7 +55,6 @@ export class CvsController {
     return this.cvsService.update(id, updateCvDto, userId);
   }
 
-  // delete now receives userId to check ownership
   @Delete(':id')
   remove(@Req() req: Request, @Param('id') id: string) {
     const userId = (req as any).user?.userId ?? (req as any).userId;

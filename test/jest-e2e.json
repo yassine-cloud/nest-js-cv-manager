@@ -12,6 +12,9 @@
   },
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/src/$1",
-    "^generated/prisma/(.*)$": "<rootDir>/generated/prisma/$1"
-  }
+    "^generated/prisma$": "<rootDir>/generated/prisma/index.js",
+    "^generated/prisma/(.*)$": "<rootDir>/generated/prisma/$1",
+    "^(\\.{1,2}/.*)\\.js$": "$1"
+  },
+  "setupFiles": ["<rootDir>/test/jest-setup.ts"]
 }
