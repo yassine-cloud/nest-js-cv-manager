@@ -1,0 +1,10 @@
+{
+  "name": "webhook-consumer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simple webhook consumer for CvTech",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
