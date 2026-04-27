@@ -56,7 +56,7 @@ Authorization: Bearer {{token}}
 # @name createUser
 POST {{baseUrl}}/users
 Content-Type: {{contentType}}
-Authorization: Bearer {{token}}
+Authorization: Bearer {{adminToken}}
 
 {
   "username": "john_doe",
@@ -69,14 +69,36 @@ Authorization: Bearer {{token}}
 ###
 @createdUserId = {{createUser.response.body.id}}
 
+###
+# login new user to get his token
+# @name newUserlogin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "usernameOrEmail": "john_doe",
+  "password": "password123"
+}
+
+###
+@createdUserToken = {{newUserlogin.response.body.access_token}}
+
 GET {{baseUrl}}/users
 Authorization: Bearer {{token}}
+# forbidden for the user
 
+###
+GET {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
 
 ###
 GET {{baseUrl}}/users/{{createdUserId}}
 Authorization: Bearer {{token}}
-
+# forbidden for the user to access others data
+###
+###
+GET {{baseUrl}}/users/{{createdUserId}}
+Authorization: Bearer {{createdUserToken}}
 
 ###
 PATCH {{baseUrl}}/users/{{createdUserId}}
@@ -84,8 +106,7 @@ Content-Type: {{contentType}}
 Authorization: Bearer {{token}}
 
 {
-  "username": "john_doe_updated",
-  "role": "ADMIN"
+  "username": "john_doe_updated"
 }
 
 
@@ -133,7 +154,7 @@ Authorization: Bearer {{token}}
 # @name createCv
 POST {{baseUrl}}/cvs
 Content-Type: {{contentType}}
-Authorization: Bearer {{token}}
+Authorization: Bearer {{createdUserToken}}
 
 {
   "firstName": "John",
@@ -157,7 +178,12 @@ Authorization: Bearer {{token}}
 @cvId = {{createCv.response.body.id}}
 
 GET {{baseUrl}}/cvs
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
+
+### 
+# new user to retrieve only his cvs
+GET {{baseUrl}}/cvs
+Authorization: Bearer {{createdUserToken}}
 
 
 ###
@@ -170,6 +196,9 @@ Authorization: Bearer {{adminToken}}
 GET {{baseUrl}}/cvs/{{cvId}}
 Authorization: Bearer {{token}}
 
+###
+GET {{baseUrl}}/cvs/{{cvId}}
+Authorization: Bearer {{createdUserToken}}
 
 ###for admin
 GET {{baseUrl}}/cvs/{{cvId}}
@@ -179,7 +208,7 @@ Authorization: Bearer {{adminToken}}
 ###
 PATCH {{baseUrl}}/cvs/{{cvId}}
 Content-Type: {{contentType}}
-Authorization: Bearer {{token}}
+Authorization: Bearer {{createdUserToken}}
 
 {
   "Job": "Senior Backend Developer",
@@ -204,7 +233,7 @@ Authorization: Bearer {{adminToken}}
 
 ###
 DELETE {{baseUrl}}/cvs/{{cvId}}
-Authorization: Bearer {{token}}
+Authorization: Bearer {{createdUserToken}}
 
 
 ###
