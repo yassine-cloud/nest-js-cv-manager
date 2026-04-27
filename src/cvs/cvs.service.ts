@@ -5,10 +5,14 @@ import {
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class CvsService {
-  constructor(private databaseService: DatabaseService) {}
+  constructor(
+    private databaseService: DatabaseService,
+    private eventsService: EventsService,
+  ) {}
 
   async create(createCvDto: CreateCvDto, userId: string) {
 
@@ -22,7 +26,7 @@ export class CvsService {
       }),
     );
 
-    return this.databaseService.cv.create({
+    const result = await this.databaseService.cv.create({
       data: {
         firstname: createCvDto.firstName,
         age: createCvDto.age,
@@ -34,6 +38,16 @@ export class CvsService {
       },
       include: { skills: true, user: true },
     });
+
+    this.eventsService.emitEvent({
+      type: 'CV_CREATED',
+      entityId: result.id,
+      ownerId: result.userId,
+      data: result,
+      timestamp: new Date().toISOString(),
+    });
+
+    return result;
   }
 
   async findAll() {
@@ -71,17 +85,37 @@ export class CvsService {
       data.skills = { set: [], connect: skillsToConnect };
     }
 
-    return this.databaseService.cv.update({
+    const result = await this.databaseService.cv.update({
       where: { id },
       data,
       include: { skills: true, user: true },
     });
+
+    this.eventsService.emitEvent({
+      type: 'CV_UPDATED',
+      entityId: result.id,
+      ownerId: result.userId,
+      data: result,
+      timestamp: new Date().toISOString(),
+    });
+
+    return result;
   }
 
   async remove(id: string) {
     const cv = await this.databaseService.cv.findUnique({ where: { id } });
     if (!cv) throw new NotFoundException('CV not found');
 
-    return this.databaseService.cv.delete({ where: { id } });
+    const result = await this.databaseService.cv.delete({ where: { id } });
+
+    this.eventsService.emitEvent({
+      type: 'CV_DELETED',
+      entityId: result.id,
+      ownerId: result.userId,
+      data: result,
+      timestamp: new Date().toISOString(),
+    });
+
+    return result;
   }
 }
