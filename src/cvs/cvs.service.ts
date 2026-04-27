@@ -7,6 +7,7 @@ import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { CvEvents, CvEventPayload } from './events/cv.events';
+import { AppEvent, SSE } from 'src/events/events.type';
 
 @Injectable()
 export class CvsService {
@@ -49,7 +50,15 @@ export class CvsService {
       skills: createdCv.skills ?? undefined,
       createdAt: createdCv.createdAt ?? undefined,
     };
+    const SSE_createdEvent : AppEvent = {
+      type: SSE.CV_CREATED,
+      entityId: createdCv.id,
+      ownerId: createdCv.userId,
+      data: createdCv,
+      timestamp: new Date().toISOString(),
+    };
     this.eventEmitter.emit(CvEvents.Created, createdEvent);
+    this.eventEmitter.emit(SSE.CV_CREATED, SSE_createdEvent);
     return createdCv;
   }
 
@@ -103,7 +112,17 @@ export class CvsService {
       skills: updatedCv.skills ?? undefined,
       updatedAt: updatedCv.updatedAt ?? undefined,
     };
+
+    const SSE_updatedEvent : AppEvent = {
+      type: SSE.CV_UPDATED,
+      entityId: updatedCv.id,
+      ownerId: updatedCv.userId,
+      data: updatedCv,
+      timestamp: new Date().toISOString(),
+    };
+
     this.eventEmitter.emit(CvEvents.Updated, updatedEvent);
+    this.eventEmitter.emit(SSE.CV_UPDATED, SSE_updatedEvent);
     return updatedCv;
   }
 
@@ -122,7 +141,17 @@ export class CvsService {
       skills: deletedCv.skills ?? undefined,
       deletedAt: new Date(),
     };
+
+    const SSE_deletedEvent : AppEvent = {
+      type: SSE.CV_DELETED,
+      entityId: deletedCv.id,
+      ownerId: deletedCv.userId,
+      data: deletedCv,
+      timestamp: new Date().toISOString(),
+    };
+
     this.eventEmitter.emit(CvEvents.Deleted, deletedEvent);
+    this.eventEmitter.emit(SSE.CV_DELETED, SSE_deletedEvent);
     return deletedCv;
   }
 }

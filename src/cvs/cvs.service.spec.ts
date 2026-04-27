@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventsService } from 'src/events/events.service';
 import { CvEvents } from './events/cv.events';
 
 
@@ -25,6 +26,9 @@ describe('CvsService', () => {
   let mockEventEmitter: {
     emit: jest.Mock;
   };
+  let mockEventsService: {
+    emitEvent: jest.Mock;
+  };
 
   beforeEach(async () => {
     mockDatabaseService = {
@@ -42,6 +46,9 @@ describe('CvsService', () => {
     mockEventEmitter = {
       emit: jest.fn(),
     };
+    mockEventsService = {
+      emitEvent: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
 
@@ -54,6 +61,10 @@ describe('CvsService', () => {
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
+        },
+        {
+          provide: EventsService,
+          useValue: mockEventsService,
         },
       ],
 
@@ -183,7 +194,7 @@ describe('CvsService', () => {
 
     const result = await service.remove('cv-1');
 
-    expect(mockDatabaseService.cv.delete).toHaveBeenCalledWith({ where: { id: 'cv-1' } });
+    expect(mockDatabaseService.cv.delete).toHaveBeenCalledWith({ where: { id: 'cv-1' }, include: { skills: true, user: true } });
     expect(mockEventEmitter.emit).toHaveBeenCalledWith(
       CvEvents.Deleted,
       expect.objectContaining({ id: 'cv-1', userId: 'user-1' }),

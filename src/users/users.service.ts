@@ -2,12 +2,14 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { DatabaseService } from 'src/database/database.service';
 import { Prisma } from 'generated/prisma/client';
 import { randomBytes, scryptSync } from 'crypto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AppEvent, SSE } from 'src/events/events.type';
 
 @Injectable()
 export class UsersService {
-  constructor(private databaseService: DatabaseService) { }
+  constructor(private databaseService: DatabaseService, private eventEmitter: EventEmitter2) { }
 
-    private hashPassword(password: string) {
+  private hashPassword(password: string) {
     const salt = randomBytes(16).toString('hex');
     const derived = scryptSync(password, salt, 64).toString('hex');
     return `${salt}:${derived}`;
@@ -16,9 +18,18 @@ export class UsersService {
   async create(createUserDto: Prisma.UserCreateInput) {
     try {
       createUserDto.password = this.hashPassword(createUserDto.password);
-      return await this.databaseService.user.create({
+      const user = await this.databaseService.user.create({
         data: createUserDto
       });
+      const SSE_userCreatedEvent: AppEvent = {
+        type: SSE.USER_CREATED,
+        entityId: user.id,
+        ownerId: user.id,
+        data: user,
+        timestamp: new Date().toISOString(),
+      };
+      this.eventEmitter.emit(SSE.USER_CREATED, SSE_userCreatedEvent);
+      return user;
     } catch (error: any) {
       if (error.code === 'P2002') {
         throw new BadRequestException('Username or email already exists');
@@ -66,10 +77,19 @@ export class UsersService {
       if (updateUserDto.password) {
         updateUserDto.password = this.hashPassword(updateUserDto.password as string);
       }
-      return await this.databaseService.user.update({
+      const update_user = await this.databaseService.user.update({
         where: { id },
         data: updateUserDto
       });
+      const SSE_userUpdatedEvent: AppEvent = {
+        type: SSE.USER_UPDATED,
+        entityId: update_user.id,
+        ownerId: update_user.id,
+        data: update_user,
+        timestamp: new Date().toISOString(),
+      };
+      this.eventEmitter.emit(SSE.USER_UPDATED, SSE_userUpdatedEvent);
+      return update_user;
     } catch (error: any) {
       if (error.code === 'P2025') {
         throw new NotFoundException(`User with id ${id} not found`);
@@ -81,9 +101,18 @@ export class UsersService {
 
   async remove(id: string) {
     try {
-      return await this.databaseService.user.delete({
+      const delted_user = await this.databaseService.user.delete({
         where: { id }
       });
+      const SSE_userDeletedEvent: AppEvent = {
+        type: SSE.USER_DELETED,
+        entityId: delted_user.id,
+        ownerId: delted_user.id,
+        data: delted_user,
+        timestamp: new Date().toISOString(),
+      };
+      this.eventEmitter.emit(SSE.USER_DELETED, SSE_userDeletedEvent);
+      return delted_user;
     } catch (error: any) {
       if (error.code === 'P2025') {
         throw new NotFoundException(`User with id ${id} not found`);
