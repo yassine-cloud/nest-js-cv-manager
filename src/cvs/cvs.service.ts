@@ -1,5 +1,4 @@
 import {
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -37,28 +36,23 @@ export class CvsService {
     });
   }
 
-  async findAll(userId?: string, role?: string) {
-    if (role === 'ADMIN') {
-      return this.databaseService.cv.findMany({ include: { skills: true, user: true } });
-    }
+  async findAll() {
+    return this.databaseService.cv.findMany({ include: { skills: true, user: true } });
+  }
+
+  async findAllByUser(userId: string) {
     return this.databaseService.cv.findMany({ where: { userId }, include: { skills: true, user: true } });
   }
 
-  async findOne(id: string, userId?: string, role?: string) {
+  async findOne(id: string) {
     const cv = await this.databaseService.cv.findUnique({ where: { id }, include: { skills: true, user: true } });
-    if (!cv) return null;
-    if (role === 'ADMIN') return cv;
-    if (cv.userId !== userId) throw new ForbiddenException('You can only view your own CVs');
+    if (!cv) throw new NotFoundException('CV not found');
     return cv;
   }
 
-  async update(id: string, updateCvDto: UpdateCvDto, userId: string) {
+  async update(id: string, updateCvDto: UpdateCvDto) {
     const cv = await this.databaseService.cv.findUnique({ where: { id } });
     if (!cv) throw new NotFoundException('CV not found');
-
-    if (cv.userId !== userId) {
-      throw new ForbiddenException('You can only update your own CVs');
-    }
 
     const { Job, skills, ...rest } = updateCvDto as any;
     const data: any = { ...rest };
@@ -84,13 +78,9 @@ export class CvsService {
     });
   }
 
-  async remove(id: string, userId: string) {
+  async remove(id: string) {
     const cv = await this.databaseService.cv.findUnique({ where: { id } });
     if (!cv) throw new NotFoundException('CV not found');
-
-    if (cv.userId !== userId) {
-      throw new ForbiddenException('You can only delete your own CVs');
-    }
 
     return this.databaseService.cv.delete({ where: { id } });
   }

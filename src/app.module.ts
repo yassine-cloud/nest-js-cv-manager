@@ -9,6 +9,7 @@ import { CvsModule } from './cvs/cvs.module';
 import { SkillModule } from './skill/skill.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 
 @Module({
   imports: [
@@ -25,6 +26,10 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CvsService } from './cvs.service';
 import { DatabaseService } from 'src/database/database.service';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 
@@ -90,11 +90,11 @@ describe('CvsService', () => {
     expect(result).toEqual(createdCv);
   });
 
-  it('findAll should return all cvs for ADMIN', async () => {
+  it('findAll should return all cvs', async () => {
     const cvs = [{ id: 'cv-1' }];
     mockDatabaseService.cv.findMany.mockResolvedValue(cvs);
 
-    const result = await service.findAll('user-1', 'ADMIN');
+    const result = await service.findAll();
 
     expect(mockDatabaseService.cv.findMany).toHaveBeenCalledWith({
       include: { skills: true, user: true },
@@ -102,11 +102,11 @@ describe('CvsService', () => {
     expect(result).toEqual(cvs);
   });
 
-  it('findAll should return only user cvs for non-admin', async () => {
+  it('findAllByUser should return only user cvs', async () => {
     const cvs = [{ id: 'cv-1', userId: 'user-1' }];
     mockDatabaseService.cv.findMany.mockResolvedValue(cvs);
 
-    const result = await service.findAll('user-1', 'USER');
+    const result = await service.findAllByUser('user-1');
 
     expect(mockDatabaseService.cv.findMany).toHaveBeenCalledWith({
       where: { userId: 'user-1' },
@@ -115,31 +115,19 @@ describe('CvsService', () => {
     expect(result).toEqual(cvs);
   });
 
-  it('findOne should return null if cv not found', async () => {
+  it('findOne should throw NotFoundException if cv not found', async () => {
     mockDatabaseService.cv.findUnique.mockResolvedValue(null);
 
-    const result = await service.findOne('cv-1', 'user-1', 'USER');
-
-    expect(result).toBeNull();
-  });
-
-  it('findOne should throw ForbiddenException for non-owner', async () => {
-    mockDatabaseService.cv.findUnique.mockResolvedValue({ id: 'cv-1', userId: 'user-2' });
-
-    await expect(service.findOne('cv-1', 'user-1', 'USER')).rejects.toBeInstanceOf(
-      ForbiddenException,
-    );
+    await expect(service.findOne('cv-1')).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('update should throw NotFoundException when cv does not exist', async () => {
     mockDatabaseService.cv.findUnique.mockResolvedValue(null);
 
-    await expect(service.update('cv-1', {} as UpdateCvDto, 'user-1')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(service.update('cv-1', {} as UpdateCvDto)).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('update should update cv for owner', async () => {
+  it('update should update cv', async () => {
     const dto: UpdateCvDto = {
       Job: 'Senior Dev',
       skills: [{ id: 'skill-1', designation: 'Node' }],
@@ -149,7 +137,7 @@ describe('CvsService', () => {
     const updatedCv = { id: 'cv-1', job: 'Senior Dev' };
     mockDatabaseService.cv.update.mockResolvedValue(updatedCv);
 
-    const result = await service.update('cv-1', dto, 'user-1');
+    const result = await service.update('cv-1', dto);
 
     expect(mockDatabaseService.cv.update).toHaveBeenCalledWith({
       where: { id: 'cv-1' },
@@ -162,18 +150,18 @@ describe('CvsService', () => {
     expect(result).toEqual(updatedCv);
   });
 
-  it('remove should throw ForbiddenException for non-owner', async () => {
-    mockDatabaseService.cv.findUnique.mockResolvedValue({ id: 'cv-1', userId: 'user-2' });
+  it('remove should throw NotFoundException when cv does not exist', async () => {
+    mockDatabaseService.cv.findUnique.mockResolvedValue(null);
 
-    await expect(service.remove('cv-1', 'user-1')).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(service.remove('cv-1')).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('remove should delete cv for owner', async () => {
+  it('remove should delete cv', async () => {
     mockDatabaseService.cv.findUnique.mockResolvedValue({ id: 'cv-1', userId: 'user-1' });
     const deletedCv = { id: 'cv-1' };
     mockDatabaseService.cv.delete.mockResolvedValue(deletedCv);
 
-    const result = await service.remove('cv-1', 'user-1');
+    const result = await service.remove('cv-1');
 
     expect(mockDatabaseService.cv.delete).toHaveBeenCalledWith({ where: { id: 'cv-1' } });
     expect(result).toEqual(deletedCv);

@@ -10,9 +10,11 @@ describe('Auth Guard (e2e)', () => {
   let app: INestApplication<App>;
   let validToken: string;
   let otherUserToken: string;
+  let adminToken: string;
   let userId: string;
   let otherUserId: string;
   let cvId: string;
+  let adminCvId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -54,6 +56,15 @@ describe('Auth Guard (e2e)', () => {
       .send({ usernameOrEmail: 'middleware-user-2', password: 'secret123' })
       .expect(201);
     otherUserToken = otherLogin.body.access_token;
+
+    const adminLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        usernameOrEmail: process.env.admin_username ?? 'admin',
+        password: process.env.admin_password ?? 'admin123',
+      })
+      .expect(201);
+    adminToken = adminLogin.body.access_token;
   });
 
   afterAll(async () => {
@@ -61,6 +72,11 @@ describe('Auth Guard (e2e)', () => {
       await request(app.getHttpServer())
         .delete(`/cvs/${cvId}`)
         .set('Authorization', `Bearer ${validToken}`);
+    }
+    if (adminCvId) {
+      await request(app.getHttpServer())
+        .delete(`/cvs/${adminCvId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
     }
     if (userId) {
       await request(app.getHttpServer())
@@ -157,5 +173,48 @@ describe('Auth Guard (e2e)', () => {
 
     expect(res.body.id).toBe(cvId);
     cvId = undefined as any;
+  });
+
+  // ─── TEST 9 ───────────────────────────────────────────────
+  it('POST /cvs by user for admin access checks → 201 Created', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/cvs')
+      .set('Authorization', `Bearer ${validToken}`)
+      .send({
+        firstName: 'Owned',
+        name: 'ByUser',
+        age: 26,
+        Job: 'Engineer',
+        cin: '87654321',
+        path: '',
+        skills: [],
+      })
+      .expect(201);
+
+    adminCvId = res.body.id;
+    expect(res.body.userId).toBe(userId);
+  });
+
+  // ─── TEST 10 ───────────────────────────────────────────────
+  it('PATCH /cvs/:id by admin on another user cv → 200 OK', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/cvs/${adminCvId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ Job: 'Admin Edited' })
+      .expect(200);
+
+    expect(res.body.id).toBe(adminCvId);
+    expect(res.body.job).toBe('Admin Edited');
+  });
+
+  // ─── TEST 11 ───────────────────────────────────────────────
+  it('DELETE /cvs/:id by admin on another user cv → 200 OK', async () => {
+    const res = await request(app.getHttpServer())
+      .delete(`/cvs/${adminCvId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(res.body.id).toBe(adminCvId);
+    adminCvId = undefined as any;
   });
 });
