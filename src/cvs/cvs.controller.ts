@@ -7,58 +7,80 @@ import {
   Param,
   Delete,
   Req,
+  ForbiddenException,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { CvsService } from './cvs.service';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { Request } from 'express';
+import { Roles } from 'src/auth/roles.decorator';
 
-@UseGuards(AuthGuard('jwt'))
+@Roles('ADMIN', 'USER')
 @Controller('cvs')
 export class CvsController {
   constructor(private readonly cvsService: CvsService) {}
 
   @Post()
   create(@Req() req: Request, @Body() createCvDto: CreateCvDto) {
-    const userId = (req as any).user?.userId ?? (req as any).userId;
+    const userId = req.user?.userId;
     if (!userId) throw new UnauthorizedException();
     return this.cvsService.create(createCvDto, userId);
   }
 
   @Get()
   findAll(@Req() req: Request) {
-    const user = (req as any).user;
-    const userId = user?.userId ?? (req as any).userId;
+    const user = req.user;
+    const userId = user?.userId;
     const role = user?.role;
-    return this.cvsService.findAll(userId, role);
+    if (!userId) throw new UnauthorizedException();
+    if (role === 'ADMIN') return this.cvsService.findAll();
+    return this.cvsService.findAllByUser(userId);
   }
 
   @Get(':id')
-  findOne(@Req() req: Request, @Param('id') id: string) {
-    const user = (req as any).user;
-    const userId = user?.userId ?? (req as any).userId;
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const user = req.user;
+    const userId = user?.userId;
     const role = user?.role;
-    return this.cvsService.findOne(id, userId, role);
+    if (!userId) throw new UnauthorizedException();
+
+    const cv = await this.cvsService.findOne(id);
+    if (role !== 'ADMIN' && cv.userId !== userId) {
+      throw new ForbiddenException('You can only view your own CVs');
+    }
+    return cv;
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Req() req: Request,
     @Param('id') id: string,
     @Body() updateCvDto: UpdateCvDto,
   ) {
-    const userId = (req as any).user?.userId ?? (req as any).userId;
+    const user = req.user;
+    const userId = user?.userId;
+    const role = user?.role;
     if (!userId) throw new UnauthorizedException();
-    return this.cvsService.update(id, updateCvDto, userId);
+
+    const cv = await this.cvsService.findOne(id);
+    if (role !== 'ADMIN' && cv.userId !== userId) {
+      throw new ForbiddenException('You can only update your own CVs');
+    }
+    return this.cvsService.update(id, updateCvDto);
   }
 
   @Delete(':id')
-  remove(@Req() req: Request, @Param('id') id: string) {
-    const userId = (req as any).user?.userId ?? (req as any).userId;
+  async remove(@Req() req: Request, @Param('id') id: string) {
+    const user = req.user;
+    const userId = user?.userId;
+    const role = user?.role;
     if (!userId) throw new UnauthorizedException();
-    return this.cvsService.remove(id, userId);
+
+    const cv = await this.cvsService.findOne(id);
+    if (role !== 'ADMIN' && cv.userId !== userId) {
+      throw new ForbiddenException('You can only delete your own CVs');
+    }
+    return this.cvsService.remove(id);
   }
 }

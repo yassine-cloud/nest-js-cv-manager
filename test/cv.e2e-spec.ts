@@ -36,18 +36,33 @@ describe('Cv (e2e)', () => {
 
     const skillRes = await request(app.getHttpServer())
       .post('/skill')
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({ designation: 'e2e-existing-skill' })
       .expect(201);
     skillId = skillRes.body.id;
   });
 
   afterAll(async () => {
-    if (cvId) await request(app.getHttpServer()).delete(`/cvs/${cvId}`);
-    for (const id of extraSkillIds) {
-      await request(app.getHttpServer()).delete(`/skill/${id}`);
+    if (cvId) {
+      await request(app.getHttpServer())
+        .delete(`/cvs/${cvId}`)
+        .set('Authorization', `Bearer ${accessToken}`);
     }
-    if (skillId) await request(app.getHttpServer()).delete(`/skill/${skillId}`);
-    if (userId) await request(app.getHttpServer()).delete(`/users/${userId}`);
+    for (const id of extraSkillIds) {
+      await request(app.getHttpServer())
+        .delete(`/skill/${id}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+    }
+    if (skillId) {
+      await request(app.getHttpServer())
+        .delete(`/skill/${skillId}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+    }
+    if (userId) {
+      await request(app.getHttpServer())
+        .delete(`/users/${userId}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+    }
     await app.close();
   });
 
@@ -95,6 +110,7 @@ describe('Cv (e2e)', () => {
   it('PATCH /cvs/:id -> update (replace skills)', async () => {
     const newSkillRes = await request(app.getHttpServer())
       .post('/skill')
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({ designation: 'e2e-replacement-skill' })
       .expect(201);
     const replaceSkillId = newSkillRes.body.id;
