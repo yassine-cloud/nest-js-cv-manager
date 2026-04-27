@@ -1,4 +1,5 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -7,8 +8,7 @@ import { UsersModule } from './users/users.module';
 import { CvsModule } from './cvs/cvs.module';
 import { SkillModule } from './skill/skill.module';
 import { AuthModule } from './auth/auth.module';
-import { AuthMiddleware } from './middleware/auth.middleware';
-import { CvsController } from './cvs/cvs.controller';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -20,12 +20,12 @@ import { CvsController } from './cvs/cvs.controller';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(AuthMiddleware)
-      .forRoutes(CvsController);
-  }
-}
+export class AppModule {}
