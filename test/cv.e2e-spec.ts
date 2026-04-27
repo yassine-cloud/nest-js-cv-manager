@@ -9,6 +9,7 @@ describe('Cv (e2e)', () => {
 
   let app: INestApplication<App>;
   let userId: string;
+  let accessToken: string;
   let skillId: string;
   let cvId: string;
   const extraSkillIds: string[] = [];
@@ -21,11 +22,17 @@ describe('Cv (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    const userRes = await request(app.getHttpServer())
-      .post('/users')
-      .send({ username: 'e2e-user', email: 'e2e-user@example.com', password: 'secret' })
+    const registerRes = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ username: 'e2e-user', email: 'e2e-user@example.com', password: 'secret123' })
       .expect(201);
-    userId = userRes.body.id;
+    userId = registerRes.body.id;
+
+    const loginRes = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ usernameOrEmail: 'e2e-user', password: 'secret123' })
+      .expect(201);
+    accessToken = loginRes.body.access_token;
 
     const skillRes = await request(app.getHttpServer())
       .post('/skill')
@@ -44,7 +51,7 @@ describe('Cv (e2e)', () => {
     await app.close();
   });
 
-  it('POST /cvs/:userId -> create (connect + create skills)', async () => {
+  it('POST /cvs -> create (connect + create skills)', async () => {
     const payload = {
       firstName: 'E2E',
       name: 'Tester',
@@ -57,7 +64,11 @@ describe('Cv (e2e)', () => {
       ]
     };
 
-    const res = await request(app.getHttpServer()).post(`/cvs/${userId}`).send(payload).expect(201);
+    const res = await request(app.getHttpServer())
+      .post('/cvs')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send(payload)
+      .expect(201);
     expect(res.body).toHaveProperty('id');
     expect(Array.isArray(res.body.skills)).toBeTruthy();
     expect(res.body.user).toBeDefined();
@@ -65,13 +76,19 @@ describe('Cv (e2e)', () => {
   });
 
   it('GET /cvs -> list includes created', async () => {
-    const res = await request(app.getHttpServer()).get('/cvs').expect(200);
+    const res = await request(app.getHttpServer())
+      .get('/cvs')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
     expect(Array.isArray(res.body)).toBeTruthy();
     expect(res.body.find((c: any) => c.id === cvId)).toBeDefined();
   });
 
   it('GET /cvs/:id -> findOne', async () => {
-    const res = await request(app.getHttpServer()).get(`/cvs/${cvId}`).expect(200);
+    const res = await request(app.getHttpServer())
+      .get(`/cvs/${cvId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
     expect(res.body.id).toBe(cvId);
   });
 
@@ -88,14 +105,21 @@ describe('Cv (e2e)', () => {
       skills: [{ id: replaceSkillId }]
     };
 
-    const res = await request(app.getHttpServer()).patch(`/cvs/${cvId}`).send(updatePayload).expect(200);
+    const res = await request(app.getHttpServer())
+      .patch(`/cvs/${cvId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send(updatePayload)
+      .expect(200);
     expect(res.body.job).toBe('Senior Developer');
     expect(Array.isArray(res.body.skills)).toBeTruthy();
     expect(res.body.skills.length).toBe(1);
   });
 
   it('DELETE /cvs/:id -> remove', async () => {
-    const res = await request(app.getHttpServer()).delete(`/cvs/${cvId}`).expect(200);
+    const res = await request(app.getHttpServer())
+      .delete(`/cvs/${cvId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
     expect(res.body.id).toBe(cvId);
     cvId = undefined as any;
   });

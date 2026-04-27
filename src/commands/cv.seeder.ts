@@ -8,6 +8,7 @@ import {
   randPassword,
   randUserName,
 } from '@ngneat/falso';
+import { randomBytes, scryptSync } from 'crypto';
 
 import { Prisma } from 'generated/prisma/client';
 import { DatabaseService } from 'src/database/database.service';
@@ -63,7 +64,13 @@ function pickRandomIds(ids: string[], amount: number): string[] {
 export class CvSeederService {
   private readonly logger = new Logger(CvSeederService.name);
 
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(private readonly databaseService: DatabaseService) { }
+
+  hashPassword(password: string) {
+    const salt = randomBytes(16).toString('hex');
+    const derived = scryptSync(password, salt, 64).toString('hex');
+    return `${salt}:${derived}`;
+  }
 
   async seed(): Promise<void> {
     await this.databaseService.$transaction([
@@ -71,6 +78,14 @@ export class CvSeederService {
       this.databaseService.user.deleteMany(),
       this.databaseService.skill.deleteMany(),
     ]);
+
+
+    const adminAccount: Prisma.UserCreateManyInput = {
+      username: process.env.admin_username || 'admin',
+      email: process.env.admin_email || 'admin@email.com',
+      password: process.env.admin_password || 'admin123',
+      role: 'ADMIN'
+    };
 
     const usersData: Prisma.UserCreateManyInput[] = Array.from(
       { length: USERS_COUNT },
@@ -82,6 +97,13 @@ export class CvSeederService {
       }),
     );
 
+    usersData.unshift(adminAccount);
+
+    // need to hash every password
+
+    for (const user of usersData) {
+      user.password = this.hashPassword(user.password);
+    }
     await this.databaseService.user.createMany({ data: usersData });
     this.logger.log(`Seeded ${USERS_COUNT} users.`);
 

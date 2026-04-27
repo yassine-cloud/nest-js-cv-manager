@@ -1,20 +1,26 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": "..",
+  "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
-  "roots": [
-    "<rootDir>/test",
-    "<rootDir>/src"
-  ],
-  "transform": {
-    "^.+\\.(t|j)s$": ["ts-jest", { "diagnostics": { "ignoreCodes": [151002] } }]
-  },
+  "setupFiles": ["<rootDir>/jest-e2e.env.ts"],
+  "globalSetup": "<rootDir>/jest-e2e.global-setup.ts",
   "moduleNameMapper": {
-    "^src/(.*)$": "<rootDir>/src/$1",
-    "^generated/prisma$": "<rootDir>/generated/prisma/index.js",
-    "^generated/prisma/(.*)$": "<rootDir>/generated/prisma/$1",
+    "^src/(.*)$": "<rootDir>/../src/$1",
+    "^generated/prisma/client$": "<rootDir>/../generated/prisma/client",
     "^(\\.{1,2}/.*)\\.js$": "$1"
   },
-  "setupFiles": ["<rootDir>/test/jest-setup.ts"]
+  "transform": {
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "isolatedModules": true
+        },
+        "diagnostics": {
+          "ignoreCodes": [151002]
+        }
+      }
+    ]
+  }
 }

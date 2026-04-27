@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { Prisma } from 'generated/prisma/client';
 
@@ -6,30 +6,64 @@ import { Prisma } from 'generated/prisma/client';
 export class UsersService {
   constructor(private databaseService: DatabaseService) {}
   
-  create(createUserDto: Prisma.UserCreateInput) {
-    return this.databaseService.user.create({ data: createUserDto });
+  async create(createUserDto: Prisma.UserCreateInput) {
+    try {
+      return await this.databaseService.user.create({
+        data: createUserDto
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new BadRequestException('Username or email already exists');
+      }
+
+      throw new BadRequestException('Error creating user');
+    }
   }
 
-  findAll() {
-    return this.databaseService.user.findMany();
+  async findAll() {
+    try {
+    return await this.databaseService.user.findMany();
+  } catch (error) {
+    return [];
+  }
   }
 
-  findOne(id: string) {
-    return this.databaseService.user.findUnique({
-      where: { id }
-    });
+  async findOne(id: string) {
+    try {
+      return await this.databaseService.user.findUnique({
+        where: { id }
+      });
+    } catch (error) {
+      throw new BadRequestException('Error fetching user');
+    }
   }
 
-  update(id: string, updateUserDto: Prisma.UserUpdateInput) {
-    return this.databaseService.user.update({
-      where: { id },
-      data: updateUserDto
-    });
+  async update(id: string, updateUserDto: Prisma.UserUpdateInput) {
+    try {
+      return await this.databaseService.user.update({
+        where: { id },
+        data: updateUserDto
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(`User with id ${id} not found`);
+      }
+
+      throw new BadRequestException('Error updating user');
+    }
   }
 
-  remove(id: string) {
-    return this.databaseService.user.delete({
-      where: { id }
-    });
+  async remove(id: string) {
+    try {
+      return await this.databaseService.user.delete({
+        where: { id }
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(`User with id ${id} not found`);
+      }
+
+      throw new BadRequestException('Error deleting user');
+    }
   }
 }

@@ -15,7 +15,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "seed:cvs": "npm run build && node scripts/run-cv-seeder.cjs"
@@ -66,15 +66,15 @@
       "json",
       "ts"
     ],
-    "rootDir": ".",
-    "testRegex": "src/.*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
+    "rootDir": "src",
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1",
       "^generated/prisma/client$": "<rootDir>/../generated/prisma/client",
       "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
