@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -9,6 +10,22 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
     transform: true,
   }));
+
+   const config = new DocumentBuilder()
+    .setTitle('CV Manager API')
+    .setDescription('The CV Manager API documentation')
+    .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'bearerAuth',
+    )
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  (document as any).security = [{ bearerAuth: [] }];
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
