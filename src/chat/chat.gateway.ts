@@ -20,7 +20,7 @@ interface AuthSocket extends Socket {
 @WebSocketGateway({ cors: { origin: '*' }, namespace: '/chat' })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   // Track online users: userId -> { username, socketId }
   private onlineUsers = new Map<string, { username: string; socketId: string }>();
