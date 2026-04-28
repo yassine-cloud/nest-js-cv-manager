@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
+import { ChatModule } from './chat/chat.module';
 import { EventsModule } from './events/events.module';
 
 @Module({
@@ -26,8 +27,9 @@ import { EventsModule } from './events/events.module';
     CvsModule,
     SkillModule,
     AuthModule,
+    ChatModule,
     WebhooksModule,
-    EventsModule
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [
