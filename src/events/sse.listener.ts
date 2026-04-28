@@ -11,11 +11,7 @@ export class SseListener {
 
     // listen for any SSE.* namespaced events and forward them
     @OnEvent('SSE.*')
-    handleAllEvents(payload: any, eventName?: string) {
-        if (!eventName || typeof eventName !== 'string' || !eventName.startsWith('SSE.')) {
-            return; // ignore non-SSE events
-        }
-
+    handleAllEvents(payload: any) {
         try {
             this.eventsService.emitEvent(payload as AppEvent);
         } catch (err) {
