@@ -10,6 +10,8 @@ import { SkillModule } from './skill/skill.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
+import { ChatModule } from './chat/chat.module';
+
 
 @Module({
   imports: [
@@ -19,6 +21,7 @@ import { RolesGuard } from './auth/roles.guard';
     CvsModule,
     SkillModule,
     AuthModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
