@@ -38,6 +38,24 @@ export class CvsController {
     return this.cvsService.findAllByUser(userId);
   }
 
+  @Get('history')
+  async getHistory(@Req() req: Request) {
+    const user = req.user;
+    const userId = user?.userId;
+    const role = user?.role;
+    if (!userId || !role) throw new UnauthorizedException();
+    return this.cvsService.findHistory(userId, role);
+  }
+
+  @Get(':id/history')
+  async getCvHistory(@Req() req: Request, @Param('id') id: string) {
+    const user = req.user;
+    const userId = user?.userId;
+    const role = user?.role;
+    if (!userId || !role) throw new UnauthorizedException();
+    return this.cvsService.findCvHistory(id, userId, role);
+  }
+
   @Get(':id')
   async findOne(@Req() req: Request, @Param('id') id: string) {
     const user = req.user;
@@ -67,7 +85,7 @@ export class CvsController {
     if (role !== 'ADMIN' && cv.userId !== userId) {
       throw new ForbiddenException('You can only update your own CVs');
     }
-    return this.cvsService.update(id, updateCvDto);
+    return this.cvsService.update(id, updateCvDto, userId);
   }
 
   @Delete(':id')
@@ -81,6 +99,6 @@ export class CvsController {
     if (role !== 'ADMIN' && cv.userId !== userId) {
       throw new ForbiddenException('You can only delete your own CVs');
     }
-    return this.cvsService.remove(id);
+    return this.cvsService.remove(id, userId);
   }
 }

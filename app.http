@@ -240,3 +240,13 @@ Authorization: Bearer {{createdUserToken}}
 # cleanup for skill
 DELETE {{baseUrl}}/skill/{{skillId}}
 Authorization: Bearer {{token}}
+
+###
+# audit log visualization 
+GET {{baseUrl}}/cvs/history
+Authorization: Bearer {{adminToken}}
+
+###
+# audit log visualization for specific cv
+GET {{baseUrl}}/cvs/{{cvId}}/history
+Authorization: Bearer {{adminToken}}

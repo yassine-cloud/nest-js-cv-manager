@@ -26,6 +26,8 @@ model User {
   
   messages  Message[]
   reactions Reaction[]
+  auditLogs      CvAuditLog[] @relation("CvAuditActor")
+  ownedAuditLogs CvAuditLog[] @relation("CvAuditOwner")
 }
 
 model Cv {
@@ -81,4 +83,20 @@ model Reaction {
   createdAt DateTime @default(now())
 
   @@unique([messageId, userId, emoji])
+}
+
+model CvAuditLog {
+  id        String   @id @default(uuid())
+  cvId      String
+  action    String   // "CREATE", "UPDATE", "DELETE"
+  firstname String?
+  age       Int?
+  job       String?
+  path      String?
+  skills    String?  // comma-separated list of skills
+  userId    String
+  user      User     @relation("CvAuditActor", fields: [userId], references: [id])
+  cvOwnerId String
+  cvOwner   User     @relation("CvAuditOwner", fields: [cvOwnerId], references: [id])
+  createdAt DateTime @default(now())
 }

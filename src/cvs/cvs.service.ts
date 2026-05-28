@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateCvDto } from './dto/create-cv.dto';
@@ -46,9 +47,12 @@ export class CvsService {
       userId: createdCv.userId,
       user: createdCv.user,
       firstname: createdCv.firstname ?? undefined,
+      age: createdCv.age ?? undefined,
       job: createdCv.job ?? undefined,
+      path: createdCv.path ?? undefined,
       skills: createdCv.skills ?? undefined,
       createdAt: createdCv.createdAt ?? undefined,
+      actorId: createdCv.userId,
     };
     const SSE_createdEvent : AppEvent = {
       type: SSE.CV_CREATED,
@@ -76,7 +80,7 @@ export class CvsService {
     return cv;
   }
 
-  async update(id: string, updateCvDto: UpdateCvDto) {
+  async update(id: string, updateCvDto: UpdateCvDto, actorId?: string) {
     const cv = await this.databaseService.cv.findUnique({ where: { id } });
     if (!cv) throw new NotFoundException('CV not found');
 
@@ -108,9 +112,12 @@ export class CvsService {
       userId: updatedCv.userId,
       user: updatedCv.user,
       firstname: updatedCv.firstname ?? undefined,
+      age: updatedCv.age ?? undefined,
       job: updatedCv.job ?? undefined,
+      path: updatedCv.path ?? undefined,
       skills: updatedCv.skills ?? undefined,
       updatedAt: updatedCv.updatedAt ?? undefined,
+      actorId: actorId ?? updatedCv.userId,
     };
 
     const SSE_updatedEvent : AppEvent = {
@@ -126,7 +133,7 @@ export class CvsService {
     return updatedCv;
   }
 
-  async remove(id: string) {
+  async remove(id: string, actorId?: string) {
     const cv = await this.databaseService.cv.findUnique({ where: { id } });
     if (!cv) throw new NotFoundException('CV not found');
 
@@ -137,9 +144,12 @@ export class CvsService {
       userId: deletedCv.userId,
       user: deletedCv.user,
       firstname: deletedCv.firstname ?? undefined,
+      age: deletedCv.age ?? undefined,
       job: deletedCv.job ?? undefined,
+      path: deletedCv.path ?? undefined,
       skills: deletedCv.skills ?? undefined,
       deletedAt: new Date(),
+      actorId: actorId ?? deletedCv.userId,
     };
 
     const SSE_deletedEvent : AppEvent = {
@@ -153,5 +163,44 @@ export class CvsService {
     this.eventEmitter.emit(CvEvents.Deleted, deletedEvent);
     this.eventEmitter.emit(SSE.CV_DELETED, SSE_deletedEvent);
     return deletedCv;
+  }
+
+  async findHistory(actorId: string, role: string) {
+    if (role === 'ADMIN') {
+      return this.databaseService.cvAuditLog.findMany({
+        include: { user: { select: { id: true, username: true, email: true, role: true } } },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    return this.databaseService.cvAuditLog.findMany({
+      where: { userId: actorId },
+      include: { user: { select: { id: true, username: true, email: true, role: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findCvHistory(cvId: string, actorId: string, role: string) {
+    const logs = await this.databaseService.cvAuditLog.findMany({
+      where: { cvId },
+      include: { user: { select: { id: true, username: true, email: true, role: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (logs.length === 0) {
+      throw new NotFoundException('No history found for this CV');
+    }
+
+    if (role !== 'ADMIN') {
+      // Find the CREATE log to check original ownership
+      const createLog = logs.find((log) => log.action === 'CREATE');
+      // Fallback: check if the user is the actor in any of the log entries
+      const isAssociated = createLog ? createLog.userId === actorId : logs.some((log) => log.userId === actorId);
+
+      if (!isAssociated) {
+        throw new ForbiddenException('You do not have permission to view this CV history');
+      }
+    }
+
+    return logs;
   }
 }
