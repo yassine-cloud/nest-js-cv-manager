@@ -15,6 +15,8 @@ describe('CvsController', () => {
     findOne: jest.Mock;
     update: jest.Mock;
     remove: jest.Mock;
+    findHistory: jest.Mock;
+    findCvHistory: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -25,6 +27,8 @@ describe('CvsController', () => {
       findOne: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
+      findHistory: jest.fn(),
+      findCvHistory: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -127,7 +131,7 @@ describe('CvsController', () => {
     const result = await controller.update(req, 'cv-1', dto);
 
     expect(mockCvsService.findOne).toHaveBeenCalledWith('cv-1');
-    expect(mockCvsService.update).toHaveBeenCalledWith('cv-1', dto);
+    expect(mockCvsService.update).toHaveBeenCalledWith('cv-1', dto, 'user-1');
     expect(result).toEqual(updated);
   });
 
@@ -140,7 +144,7 @@ describe('CvsController', () => {
 
     const result = await controller.update(req, 'cv-1', dto);
 
-    expect(mockCvsService.update).toHaveBeenCalledWith('cv-1', dto);
+    expect(mockCvsService.update).toHaveBeenCalledWith('cv-1', dto, 'admin-1');
     expect(result).toEqual(updated);
   });
 
@@ -171,7 +175,7 @@ describe('CvsController', () => {
     const result = await controller.remove(req, 'cv-1');
 
     expect(mockCvsService.findOne).toHaveBeenCalledWith('cv-1');
-    expect(mockCvsService.remove).toHaveBeenCalledWith('cv-1');
+    expect(mockCvsService.remove).toHaveBeenCalledWith('cv-1', 'user-1');
     expect(result).toEqual(deleted);
   });
 
@@ -189,5 +193,39 @@ describe('CvsController', () => {
     await expect(controller.remove(req, 'cv-1')).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  describe('history endpoints', () => {
+    it('getHistory should call service.findHistory for authorized user', async () => {
+      const req = { user: { userId: 'user-1', role: 'USER' } } as any;
+      const historyLogs = [{ id: 'log-1', action: 'CREATE', cvId: 'cv-1', userId: 'user-1' }];
+      mockCvsService.findHistory.mockResolvedValue(historyLogs);
+
+      const result = await controller.getHistory(req);
+
+      expect(mockCvsService.findHistory).toHaveBeenCalledWith('user-1', 'USER');
+      expect(result).toEqual(historyLogs);
+    });
+
+    it('getHistory should throw UnauthorizedException if req.user is missing or incomplete', async () => {
+      const req = {} as any;
+      await expect(controller.getHistory(req)).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it('getCvHistory should call service.findCvHistory for specific CV', async () => {
+      const req = { user: { userId: 'user-1', role: 'USER' } } as any;
+      const cvHistoryLogs = [{ id: 'log-1', action: 'CREATE', cvId: 'cv-1', userId: 'user-1' }];
+      mockCvsService.findCvHistory.mockResolvedValue(cvHistoryLogs);
+
+      const result = await controller.getCvHistory(req, 'cv-1');
+
+      expect(mockCvsService.findCvHistory).toHaveBeenCalledWith('cv-1', 'user-1', 'USER');
+      expect(result).toEqual(cvHistoryLogs);
+    });
+
+    it('getCvHistory should throw UnauthorizedException if req.user is missing or incomplete', async () => {
+      const req = {} as any;
+      await expect(controller.getCvHistory(req, 'cv-1')).rejects.toBeInstanceOf(UnauthorizedException);
+    });
   });
 });

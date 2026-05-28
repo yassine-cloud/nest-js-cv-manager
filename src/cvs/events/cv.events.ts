@@ -13,9 +13,12 @@ export interface CvEventPayload {
   userId: string;
   user: User;
   firstname?: string;
+  age?: number;
   job?: string;
+  path?: string;
   skills?: skill[];
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;
+  actorId?: string;
 }
