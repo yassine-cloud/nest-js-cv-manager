@@ -26,7 +26,8 @@ model User {
   
   messages  Message[]
   reactions Reaction[]
-  auditLogs CvAuditLog[]
+  auditLogs      CvAuditLog[] @relation("CvAuditActor")
+  ownedAuditLogs CvAuditLog[] @relation("CvAuditOwner")
 }
 
 model Cv {
@@ -94,6 +95,8 @@ model CvAuditLog {
   path      String?
   skills    String?  // comma-separated list of skills
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation("CvAuditActor", fields: [userId], references: [id])
+  cvOwnerId String
+  cvOwner   User     @relation("CvAuditOwner", fields: [cvOwnerId], references: [id])
   createdAt DateTime @default(now())
 }
